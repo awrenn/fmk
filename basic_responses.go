@@ -4,58 +4,61 @@ import (
 	"net/http"
 )
 
-const (
-	FRONT_SLASH = 47 // literally ascii/utf8 for '/'
-)
+var DefaultMessages = map[int][]byte{
+	http.StatusOK:                  []byte("OK\n"),
+	http.StatusNotFound:            []byte("Not Found\n"),
+	http.StatusNotAcceptable:       []byte("Not Acceptable\n"),
+	http.StatusLengthRequired:      []byte("Length Required\n"),
+	http.StatusMethodNotAllowed:    []byte("Method Not Allowed\n"),
+	http.StatusInternalServerError: []byte("Internal Server Error\n"),
+}
 
-var (
-	OKBody                  = []byte("OK\n")
-	NotFoundBody            = []byte("Not Found\n")
-	NotAcceptableBody       = []byte("Not Acceptable\n")
-	LengthRequiredBody      = []byte("Length Required\n")
-	MethodNotAllowedBody    = []byte("Method Not Allowed\n")
-	InternalServerErrorBody = []byte("Internal Server Error\n")
-)
+type Responses struct{}
 
-func RespondOKWithBody(body []byte, respWriter http.ResponseWriter, req *http.Request) int {
-	respWriter.WriteHeader(http.StatusOK)
+var BasicResponses Responses
+
+func (r Responses) respond(body []byte, code int, respWriter http.ResponseWriter, req *http.Request) int {
+	respWriter.WriteHeader(code)
 	respWriter.Write(body)
-	return http.StatusOK
+	return code
 }
 
-func RespondNotFound(respWriter http.ResponseWriter, req *http.Request) int {
-	respWriter.WriteHeader(http.StatusNotFound)
-	respWriter.Write(NotFoundBody)
-	return http.StatusNotFound
+func (r Responses) RespondOKWithBody(body []byte, respWriter http.ResponseWriter, req *http.Request) int {
+	return r.respond(body, http.StatusOK, respWriter, req)
 }
 
-func RespondNotAcceptable(respWriter http.ResponseWriter, req *http.Request) int {
-	respWriter.WriteHeader(http.StatusNotAcceptable)
-	respWriter.Write(NotAcceptableBody)
-	return http.StatusNotAcceptable
+func (r Responses) RespondOK(respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusOK
+	body := DefaultMessages[code]
+	return r.respond(body, code, respWriter, req)
 }
 
-func RespondLengthRequired(respWriter http.ResponseWriter, req *http.Request) int {
-	respWriter.WriteHeader(http.StatusLengthRequired)
-	respWriter.Write(LengthRequiredBody)
-	return http.StatusNotFound
+func (r Responses) RespondNotFound(respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusNotFound
+	body := DefaultMessages[code]
+	return r.respond(body, code, respWriter, req)
 }
 
-func RespondOK(respWriter http.ResponseWriter, req *http.Request) int {
-	respWriter.WriteHeader(http.StatusOK)
-	respWriter.Write(OKBody)
-	return http.StatusOK
+func (r Responses) RespondNotAcceptable(respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusNotAcceptable
+	body := DefaultMessages[code]
+	return r.respond(body, code, respWriter, req)
 }
 
-func RespondMethodNotAllowed(respWriter http.ResponseWriter, req *http.Request) int {
-	respWriter.WriteHeader(http.StatusMethodNotAllowed)
-	respWriter.Write(MethodNotAllowedBody)
-	return http.StatusMethodNotAllowed
+func (r Responses) RespondLengthRequired(respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusLengthRequired
+	body := DefaultMessages[code]
+	return r.respond(body, code, respWriter, req)
 }
 
-func RespondInternalServerError(respWriter http.ResponseWriter, req *http.Request) int {
-	respWriter.WriteHeader(http.StatusInternalServerError)
-	respWriter.Write(InternalServerErrorBody)
-	return http.StatusInternalServerError
+func (r Responses) RespondMethodNotAllowed(respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusMethodNotAllowed
+	body := DefaultMessages[code]
+	return r.respond(body, code, respWriter, req)
 }
 
+func (r Responses) RespondInternalServerError(respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusInternalServerError
+	body := DefaultMessages[code]
+	return r.respond(body, code, respWriter, req)
+}
