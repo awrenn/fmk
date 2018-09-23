@@ -22,7 +22,8 @@ type WebServer interface {
         HandleFunc(path string, handleFunc func(http.ResponseWriter, *http.Request))
 	Listen(address string, port int) error
 
-	SetTLSConf(conf *tls.Config, certPath, keyPath string)
+	SetTLSConf(conf *tls.Config)
+	SetTLSServing(certFile, keyFile string)
 
         SetDefaultWrapper(WrapperFunc)
 }
@@ -56,8 +57,11 @@ func (ws *FmkWebServer) HandleFunc(path string, handleFunc func(http.ResponseWri
 	ws.serveMux.HandleFunc(path, ws.defaultWrapper(handleFunc))
 }
 
-func (ws *FmkWebServer) SetTLSConf(conf *tls.Config, certPath, keyPath string) {
+func (ws *FmkWebServer) SetTLSConf(conf *tls.Config) {
 	ws.tlsConf = conf
+}
+
+func (ws *FmkWebServer) SetTLSServing(certPath, keyPath string) {
 	ws.tlsCert = certPath
 	ws.tlsKey  = keyPath
 }
