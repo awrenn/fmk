@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	CipherTextTooShort error = errors.New("ciphertext too short")
+	CipherTextTooShort error = errors.New("FMK: Ciphertext too short")
 )
 
 // This is constant with respect to N, too much crypto packages messing with my head

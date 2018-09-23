@@ -15,6 +15,8 @@ const (
 
 var (
 	ALPHA      []byte = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	DefaultSessionName string = "FMKSession"
+	DefaultSessionKey []byte  = []byte("PleaseChangeMe;MoreRandom=Better")
 	SIDInUse   error  = errors.New("SID In Use")
 	SIDMissing error  = errors.New("SID Missing")
 
@@ -23,27 +25,34 @@ var (
 
 	LenMismatch error = errors.New("Mismatched Length")
 	KeyTooShort error = errors.New("KeyTooShort")
+	SessionKeyUnset error = errors.New("Session Key Unset")
 )
 
+var Sessions SessionManager
+func init() {
+	Sessions = NewSessionManager(DefaultSessionName, time.Duration(100), time.Duration(100))
+	Sessions.SetSessionKey(DefaultSessionKey)
+}
+
 type SessionManager interface {
-	sessionInit() (Session, error)
+	sessionInit(sid string) (Session, error)
 	sessionGet(sid string) (Session, error)
 	sessionDestroy(sid string) error
 	sessionClean(sessionMaxLife time.Duration)
-	GetSession(respWriter http.ResponseWriter, req *http.Request) Session
+	GetSession(respWriter http.ResponseWriter, req *http.Request) (Session, error)
 
-	SetSessionKey(sessionKey string)
+	SetSessionKey(sessionKey []byte)
 	SetSessionName(sessionName string)
 	SetSessionDomain(domainName string)
 	SetSessionPath(pathName string)
-	SetGCRate(gcRate int)
-	SetSessionMaxLife(ml int)
+	SetGCRate(gcRate time.Duration)
+	SetSessionMaxLife(ml time.Duration)
 }
 
 type FmkSessionManager struct {
 	SessionName    string
 
-	SessionKey     string
+	SessionKey     []byte
 	DomainName     string
 	Path           string
 
@@ -56,6 +65,7 @@ type FmkSessionManager struct {
 func NewSessionManager(sessionName string, sml, gcrate time.Duration) *FmkSessionManager {
 	sm := &FmkSessionManager{
 		Book: make(map[string]Session),
+		SessionKey:     make([]byte, 32),
 		SessionName:    sessionName,
 		SessionMaxLife: sml,
 		GCRate:         gcrate,
@@ -64,8 +74,10 @@ func NewSessionManager(sessionName string, sml, gcrate time.Duration) *FmkSessio
 	return sm
 }
 
-func (sm *FmkSessionManager) SetSessionKey(sessionKey string) {
-	sm.SessionKey = sessionKey
+func (sm *FmkSessionManager) SetSessionKey(sessionKey []byte) {
+	Log.Info.Println(string(sm.SessionKey))
+	copy(sm.SessionKey, sessionKey)
+	Log.Info.Println(string(sm.SessionKey))
 }
 
 func (sm *FmkSessionManager) SetSessionName(sessionName string) {
@@ -88,8 +100,7 @@ func (sm *FmkSessionManager) SetSessionMaxLife(ml time.Duration) {
 	sm.SessionMaxLife = ml
 }
 
-func (sm *FmkSessionManager) sessionInit() (Session, error) {
-	sid := sm.generateSID()
+func (sm *FmkSessionManager) sessionInit(sid string) (Session, error) {
 	domain := sm.DomainName
 	path := sm.Path
 	sessionName := sm.SessionName
@@ -102,6 +113,40 @@ func (sm *FmkSessionManager) sessionInit() (Session, error) {
 	sm.Book[sid] = newSess
 	return newSess, nil
 }
+
+func (sm *FmkSessionManager) GetSession(writer http.ResponseWriter, req *http.Request) (Session, error) {
+	if string(sm.SessionKey) == string(DefaultSessionKey) {
+		return nil, SessionKeyUnset
+	}
+        cookie, err := req.Cookie(sm.SessionName)
+        sm.Lock.Lock()
+        defer sm.Lock.Unlock()
+        var sess Session
+
+        // Cookie is either unset or broken
+        if err != nil {
+                for {
+                        sid := sm.generateSID()
+                        sess, err = sm.sessionInit(sid)
+                        if err != SIDInUse {
+                                break
+                        }
+                }
+                http.SetCookie(writer, sess.GetCookie())
+                return sess, nil
+        }
+        sid := cookie.Value
+        err = sm.Validate(sid)
+        if err != nil {
+                return nil, err
+        }
+        sess, err = sm.sessionGet(sid)
+        if err != nil {
+                sess, _ = sm.sessionInit(sid)
+        }
+        return sess, nil
+}
+
 
 func (sm *FmkSessionManager) generateSID() string {
 	base := make([]byte, SIDBaseLen)
@@ -123,7 +168,7 @@ func (sm *FmkSessionManager) generateSID() string {
 	return string(sid)
 }
 
-func (sm *FmkSessionManager) SessionGet(sid string) (Session, error) {
+func (sm *FmkSessionManager) sessionGet(sid string) (Session, error) {
 	sess, ok := sm.Book[sid]
 	if !ok {
 		return nil, SIDMissing
@@ -132,16 +177,16 @@ func (sm *FmkSessionManager) SessionGet(sid string) (Session, error) {
 	return sess, nil
 }
 
-func (sm *FmkSessionManager) SessionDestroy(sid string) error {
+func (sm *FmkSessionManager) sessionDestroy(sid string) error {
 	delete(sm.Book, sid)
 	return nil
 }
 
-func (sm *FmkSessionManager) SessionClean(sessionMaxLife time.Duration) {
+func (sm *FmkSessionManager) sessionClean(sessionMaxLife time.Duration) {
 	for sid, sess := range sm.Book {
 		lu := sess.GetLastUpdate()
 		if time.Since(lu) > sessionMaxLife {
-			sm.SessionDestroy(sid)
+			sm.sessionDestroy(sid)
 		}
 
 	}
@@ -174,7 +219,7 @@ func (sm *FmkSessionManager) Validate(sid string) error {
 func (sm *FmkSessionManager) GC() {
 	for {
 		sm.Lock.Lock()
-		sm.SessionClean(sm.SessionMaxLife)
+		sm.sessionClean(sm.SessionMaxLife)
 		sm.Lock.Unlock()
 		time.Sleep(sm.GCRate)
 	}
