@@ -75,9 +75,7 @@ func NewSessionManager(sessionName string, sml, gcrate time.Duration) *FmkSessio
 }
 
 func (sm *FmkSessionManager) SetSessionKey(sessionKey []byte) {
-	Log.Info.Println(string(sm.SessionKey))
 	copy(sm.SessionKey, sessionKey)
-	Log.Info.Println(string(sm.SessionKey))
 }
 
 func (sm *FmkSessionManager) SetSessionName(sessionName string) {
