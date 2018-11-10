@@ -35,13 +35,13 @@ func LogInit(
 func (logger *Logger) SetTrace(w io.Writer) {
 	logger.Trace = log.New(w,
 		"TRACE: ",
-		log.Ldate|log.Ltime|log.Lshortfile)
+		log.Ldate|log.Ltime)
 }
 
 func (logger *Logger) SetInfo(w io.Writer) {
 	logger.Info = log.New(w,
 		"INFO: ",
-		log.Ldate|log.Ltime|log.Lshortfile)
+		log.Ldate|log.Ltime)
 }
 
 func (logger *Logger) SetWarning(w io.Writer) {
