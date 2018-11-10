@@ -5,12 +5,13 @@ import (
 )
 
 var DefaultMessages = map[int][]byte{
-	http.StatusOK:                  []byte("OK\n"),
-	http.StatusNotFound:            []byte("Not Found\n"),
-	http.StatusNotAcceptable:       []byte("Not Acceptable\n"),
-	http.StatusLengthRequired:      []byte("Length Required\n"),
-	http.StatusMethodNotAllowed:    []byte("Method Not Allowed\n"),
-	http.StatusInternalServerError: []byte("Internal Server Error\n"),
+	http.StatusOK:                   []byte("OK\n"),
+	http.StatusNotFound:             []byte("Not Found\n"),
+	http.StatusNotAcceptable:        []byte("Not Acceptable\n"),
+	http.StatusLengthRequired:       []byte("Length Required\n"),
+	http.StatusMethodNotAllowed:     []byte("Method Not Allowed\n"),
+	http.StatusUnsupportedMediaType: []byte("Unsupported Media Type\n"),
+	http.StatusInternalServerError:  []byte("Internal Server Error\n"),
 }
 
 func respond(body []byte, code int, respWriter http.ResponseWriter, req *http.Request) int {
@@ -49,6 +50,12 @@ func RespondLengthRequired(respWriter http.ResponseWriter, req *http.Request) in
 
 func RespondMethodNotAllowed(respWriter http.ResponseWriter, req *http.Request) int {
 	code := http.StatusMethodNotAllowed
+	body := DefaultMessages[code]
+	return respond(body, code, respWriter, req)
+}
+
+func RespondUnsupportedMediaType(respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusUnsupportedMediaType
 	body := DefaultMessages[code]
 	return respond(body, code, respWriter, req)
 }
