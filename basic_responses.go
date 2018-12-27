@@ -6,6 +6,7 @@ import (
 
 var DefaultMessages = map[int][]byte{
 	http.StatusOK:                   []byte("OK\n"),
+	http.StatusUnauthorized:         []byte("Unauthorized\n"),
 	http.StatusNotFound:             []byte("Not Found\n"),
 	http.StatusNotAcceptable:        []byte("Not Acceptable\n"),
 	http.StatusLengthRequired:       []byte("Length Required\n"),
@@ -62,6 +63,12 @@ func RespondUnsupportedMediaType(respWriter http.ResponseWriter, req *http.Reque
 
 func RespondInternalServerError(respWriter http.ResponseWriter, req *http.Request) int {
 	code := http.StatusInternalServerError
+	body := DefaultMessages[code]
+	return respond(body, code, respWriter, req)
+}
+
+func RespondUnauthorized(respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusUnauthorized
 	body := DefaultMessages[code]
 	return respond(body, code, respWriter, req)
 }
