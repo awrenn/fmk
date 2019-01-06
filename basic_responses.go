@@ -17,7 +17,7 @@ var DefaultMessages = map[int][]byte{
 }
 
 func respond(body []byte, code int, respWriter http.ResponseWriter, req *http.Request) int {
-	respWriter.Header().Set("Content-Length", strconv.FormatInt(len(body), 10))
+	respWriter.Header().Set("Content-Length", strconv.FormatInt(int64(len(body)), 10))
 	respWriter.WriteHeader(code)
 	respWriter.Write(body)
 	return code
