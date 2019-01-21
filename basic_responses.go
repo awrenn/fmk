@@ -7,6 +7,7 @@ import (
 var DefaultMessages = map[int][]byte{
 	http.StatusOK:                  []byte("OK\n"),
 	http.StatusNotFound:            []byte("Not Found\n"),
+	http.StatusUnauthorized:        []byte("Unauthorized\n"),
 	http.StatusNotAcceptable:       []byte("Not Acceptable\n"),
 	http.StatusLengthRequired:      []byte("Length Required\n"),
 	http.StatusMethodNotAllowed:    []byte("Method Not Allowed\n"),
@@ -31,6 +32,12 @@ func RespondOK(respWriter http.ResponseWriter, req *http.Request) int {
 
 func RespondNotFound(respWriter http.ResponseWriter, req *http.Request) int {
 	code := http.StatusNotFound
+	body := DefaultMessages[code]
+	return respond(body, code, respWriter, req)
+}
+
+func RespondUnauthorized(respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusUnauthorized
 	body := DefaultMessages[code]
 	return respond(body, code, respWriter, req)
 }
