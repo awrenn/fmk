@@ -47,7 +47,7 @@ func (logger *Logger) SetInfo(w io.Writer) {
 func (logger *Logger) SetWarning(w io.Writer) {
 	logger.Warning = log.New(w,
 		"WARNING: ",
-		log.Ldate|log.Ltime)
+		log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 func (logger *Logger) SetError(w io.Writer) {
