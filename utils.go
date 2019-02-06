@@ -101,23 +101,35 @@ func ParseURL(url string) []string {
 	return result
 }
 
-func ReplaceStringWithEnv(spot *string, key string) {
+func ReplaceStringWithEnv(spot *string, key string) (err error) {
 	rep := os.Getenv(key)
 	var null string
 	if rep != null {
 		*spot = rep
 	}
+	return nil
 }
 
-func ReplaceBoolWithEnv(spot *bool, key string) {
+func ReplaceBoolWithEnv(spot *bool, key string) (err error) {
 	rawRep := os.Getenv(key)
 	rep, err := strconv.ParseBool(rawRep)
 	if err != nil {
 		// Go with default if not parsable
-		return
+		return err
 	}
 	var null bool
 	if rep != null {
 		*spot = rep
 	}
+	return nil
+}
+
+func ReplaceIntWithEnv(spot *int, key string) (err error) {
+	rawRep := os.Getenv(key)
+	rep, err := strconv.Atoi(rawRep)
+	if err != nil {
+		return err
+	}
+	*spot = rep
+	return nil
 }
