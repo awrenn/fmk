@@ -1,6 +1,7 @@
 package fmk
 
 import (
+	"bytes"
 	"crypto/rand"
 	"errors"
 	"net/http"
@@ -29,8 +30,8 @@ var (
 )
 
 var Sessions SessionManager
-func init() {
-	Sessions = NewSessionManager(DefaultSessionName, time.Duration(100), time.Duration(100))
+func initSessionManager() {
+	Sessions = NewSessionManager(DefaultSessionName, time.Duration(100)*time.Second, time.Duration(100))
 	Sessions.SetSessionKey(DefaultSessionKey)
 }
 
@@ -207,7 +208,7 @@ func (sm *FmkSessionManager) Validate(sid string) error {
 	if err != nil {
 		return err
 	}
-	if !equal(base[len(base)-len(SIDBaseString):], []byte(SIDBaseString)) {
+	if bytes.Equal(base[len(base)-len(SIDBaseString):], []byte(SIDBaseString)) {
 		return BadSID
 	}
 	return nil
