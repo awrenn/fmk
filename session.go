@@ -31,7 +31,7 @@ var (
 
 var Sessions SessionManager
 func initSessionManager() {
-	Sessions = NewSessionManager(DefaultSessionName, time.Duration(100)*time.Second, time.Duration(100))
+	Sessions = NewSessionManager(DefaultSessionName, time.Duration(100)*time.Minute, time.Duration(100)*time.Second)
 	Sessions.SetSessionKey(DefaultSessionKey)
 }
 
