@@ -28,6 +28,7 @@ var (
 type WebServer interface {
 	HandleFunc(path string, handleFunc func(http.ResponseWriter, *http.Request))
 	Listen(address string, port int) error
+	ServeStatic(staticDir string)
 
 	SetReadTimeout(timeout *time.Duration)
 	SetWriteTimeout(timeout *time.Duration)
@@ -71,6 +72,11 @@ func DefaultWrapper(orig func(http.ResponseWriter, *http.Request) int) func(http
 
 func (ws *FmkWebServer) HandleFunc(path string, handleFunc func(http.ResponseWriter, *http.Request) int) {
 	ws.serveMux.HandleFunc(path, ws.defaultWrapper(handleFunc))
+}
+
+func (ws *FmkWebServer) ServeStatic(staticDir, pathRoot string) {
+	fs := http.FileServer(http.Dir(staticDir))
+	ws.serveMux.Handle(pathRoot + "/", http.StripPrefix(pathRoot, fs))
 }
 
 func (ws *FmkWebServer) SetTLSConf(conf *tls.Config) {
