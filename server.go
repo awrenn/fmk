@@ -28,7 +28,7 @@ var (
 type WebServer interface {
 	HandleFunc(path string, handleFunc func(http.ResponseWriter, *http.Request))
 	Listen(address string, port int) error
-	ServeStatic(staticDir string)
+	ServeStatic(staticDir, pathRoot string)
 
 	SetReadTimeout(timeout *time.Duration)
 	SetWriteTimeout(timeout *time.Duration)
