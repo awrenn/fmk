@@ -10,26 +10,27 @@ import (
 )
 
 const (
-	SIDBaseLen int = 32
+	SIDBaseLen      int = 32
 	CipherKeyLength int = 32
 )
 
 var (
-	ALPHA      []byte = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	ALPHA              []byte = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	DefaultSessionName string = "FMKSession"
-	DefaultSessionKey []byte  = []byte("PleaseChangeMe;MoreRandom=Better")
-	SIDInUse   error  = errors.New("SID In Use")
-	SIDMissing error  = errors.New("SID Missing")
+	DefaultSessionKey  []byte = []byte("PleaseChangeMe;MoreRandom=Better")
+	SIDInUse           error  = errors.New("SID In Use")
+	SIDMissing         error  = errors.New("SID Missing")
 
 	SIDBaseString string = "Kitty"
 	BadSID        error  = errors.New("Invalid SID")
 
-	LenMismatch error = errors.New("Mismatched Length")
-	KeyTooShort error = errors.New("KeyTooShort")
+	LenMismatch     error = errors.New("Mismatched Length")
+	KeyTooShort     error = errors.New("KeyTooShort")
 	SessionKeyUnset error = errors.New("Session Key Unset")
 )
 
 var Sessions SessionManager
+
 func initSessionManager() {
 	Sessions = NewSessionManager(DefaultSessionName, time.Duration(100)*time.Minute, time.Duration(100)*time.Second)
 	Sessions.SetSessionKey(DefaultSessionKey)
@@ -51,21 +52,21 @@ type SessionManager interface {
 }
 
 type FmkSessionManager struct {
-	SessionName    string
+	SessionName string
 
-	SessionKey     []byte
-	DomainName     string
-	Path           string
+	SessionKey []byte
+	DomainName string
+	Path       string
 
 	Lock           sync.Mutex
 	SessionMaxLife time.Duration
 	GCRate         time.Duration
-	Book map[string]Session
+	Book           map[string]Session
 }
 
 func NewSessionManager(sessionName string, sml, gcrate time.Duration) *FmkSessionManager {
 	sm := &FmkSessionManager{
-		Book: make(map[string]Session),
+		Book:           make(map[string]Session),
 		SessionKey:     make([]byte, 32),
 		SessionName:    sessionName,
 		SessionMaxLife: sml,
@@ -117,35 +118,34 @@ func (sm *FmkSessionManager) GetSession(writer http.ResponseWriter, req *http.Re
 	if string(sm.SessionKey) == string(DefaultSessionKey) {
 		return nil, SessionKeyUnset
 	}
-        cookie, err := req.Cookie(sm.SessionName)
-        sm.Lock.Lock()
-        defer sm.Lock.Unlock()
-        var sess Session
+	cookie, err := req.Cookie(sm.SessionName)
+	sm.Lock.Lock()
+	defer sm.Lock.Unlock()
+	var sess Session
 
-        // Cookie is either unset or broken
-        if err != nil {
-                for {
-                        sid := sm.generateSID()
-                        sess, err = sm.sessionInit(sid)
-                        if err != SIDInUse {
-                                break
-                        }
-                }
-                http.SetCookie(writer, sess.GetCookie())
-                return sess, nil
-        }
-        sid := cookie.Value
-        err = sm.Validate(sid)
-        if err != nil {
-                return nil, err
-        }
-        sess, err = sm.sessionGet(sid)
-        if err != nil {
-                sess, _ = sm.sessionInit(sid)
-        }
-        return sess, nil
+	// Cookie is either unset or broken
+	if err != nil {
+		for {
+			sid := sm.generateSID()
+			sess, err = sm.sessionInit(sid)
+			if err != SIDInUse {
+				break
+			}
+		}
+		http.SetCookie(writer, sess.GetCookie())
+		return sess, nil
+	}
+	sid := cookie.Value
+	err = sm.Validate(sid)
+	if err != nil {
+		return nil, err
+	}
+	sess, err = sm.sessionGet(sid)
+	if err != nil {
+		sess, _ = sm.sessionInit(sid)
+	}
+	return sess, nil
 }
-
 
 func (sm *FmkSessionManager) generateSID() string {
 	base := make([]byte, SIDBaseLen)
@@ -248,7 +248,7 @@ func NewSession(sid, domain, path, sessionName string) Session {
 		SID:         sid,
 		Book:        make(map[string]string),
 		LastUpdate:  time.Now(),
-		DomainName:      domain,
+		DomainName:  domain,
 		Path:        path,
 		SessionName: sessionName,
 	}
