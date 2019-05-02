@@ -12,6 +12,7 @@ var DefaultMessages = map[int][]byte{
 	http.StatusLengthRequired:      []byte("Length Required\n"),
 	http.StatusMethodNotAllowed:    []byte("Method Not Allowed\n"),
 	http.StatusInternalServerError: []byte("Internal Server Error\n"),
+	http.StatusExpectationFailed:   []byte("Expectation Failed\n"),
 }
 
 func respond(body []byte, code int, respWriter http.ResponseWriter, req *http.Request) int {
@@ -62,6 +63,12 @@ func RespondMethodNotAllowed(respWriter http.ResponseWriter, req *http.Request) 
 
 func RespondInternalServerError(respWriter http.ResponseWriter, req *http.Request) int {
 	code := http.StatusInternalServerError
+	body := DefaultMessages[code]
+	return respond(body, code, respWriter, req)
+}
+
+func RespondExpectationFailed(respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusExpectationFailed
 	body := DefaultMessages[code]
 	return respond(body, code, respWriter, req)
 }
