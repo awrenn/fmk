@@ -1,13 +1,20 @@
 package fmk
 
 import (
+    "os"
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"path"
+	"strconv"
 	"time"
 )
 
 var Server FmkWebServer
+
+var (
+	doubleDot []rune = []rune("..")
+)
 
 func init() {
 	Server = FmkWebServer{
@@ -75,8 +82,22 @@ func (ws *FmkWebServer) HandleFunc(path string, handleFunc func(http.ResponseWri
 }
 
 func (ws *FmkWebServer) ServeStatic(staticDir, pathRoot string) {
-	fs := http.FileServer(http.Dir(staticDir))
-	ws.serveMux.Handle(pathRoot + "/", http.StripPrefix(pathRoot, fs))
+	serveFiles := func(w http.ResponseWriter, req *http.Request) int {
+		p, err := processURI(pathRoot, req.RequestURI)
+		if err != nil {
+			Log.Error.Println(err)
+			return http.StatusNotFound
+		}
+        f, err := os.OpenFile(p, os.O_RDONLY, 0400)
+        if err != nil {
+            Log.Warning.Printf("Error attempting to open file: %s\n", err.Error())
+            return http.StatusNotFound
+        }
+		Log.Info.Printf("Serving Static File %s\n", p)
+		return RespondOKWithReader(f, w, req)
+	}
+	ws.HandleFunc(pathRoot, serveFiles)
+	//ws.serveMux.Handle(pathRoot + "/", http.StripPrefix(pathRoot, fs))
 }
 
 func (ws *FmkWebServer) SetTLSConf(conf *tls.Config) {
@@ -124,4 +145,46 @@ func (ws *FmkWebServer) Listen(address string, port int) error {
 	}
 	Log.Error.Println(err)
 	return err
+}
+
+func processURI(webRoot, requestURI string) (fpath string, err error) {
+	// processURI should take a URI, and convert it to a safe filesystem path
+	// First, we need to stike the webroot out of the URI
+	// Second, we should make sure that the path is safe.
+	//      We are going to be overly cautious:
+	//      No .. allowed in path at all - even mid word
+	//      Cannot start with / (duh)
+	//      Must contain only printable characters
+	webRootRunes := []rune(webRoot)
+	requestRunes := []rune(requestURI)
+	for i := range webRootRunes {
+		if webRootRunes[i] != requestRunes[i] {
+			return "", fmt.Errorf("Request URI start did not match webRoot")
+		}
+	}
+	if len(webRootRunes) == len(requestRunes) {
+		return "", fmt.Errorf("No file requested")
+	}
+
+	// webRoot should end in a slash
+	// so requestURI should start right start with a non-slash character right away
+	requestRunes = requestRunes[len(webRootRunes):]
+
+	if requestRunes[0] == '/' {
+		return "", fmt.Errorf("Requested file started with root slash")
+	}
+
+	doubleDotCount := 0
+	for _, val := range requestRunes {
+		if !strconv.IsPrint(val) {
+			return "", fmt.Errorf("Path contains unprintable bytes")
+		}
+		if val == doubleDot[doubleDotCount] {
+			doubleDotCount += 1
+		}
+		if doubleDotCount == len(doubleDot) {
+			return "", fmt.Errorf("Path contains consecutive periods")
+		}
+	}
+	return path.Clean(string(requestRunes)), nil
 }

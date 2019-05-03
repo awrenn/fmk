@@ -1,7 +1,12 @@
 package fmk
 
 import (
+	"io"
 	"net/http"
+)
+
+var (
+	DEFAULT_COPY_BUFFER_SIZE = 4096
 )
 
 var DefaultMessages = map[int][]byte{
@@ -23,6 +28,14 @@ func respond(body []byte, code int, respWriter http.ResponseWriter, req *http.Re
 
 func RespondOKWithBody(body []byte, respWriter http.ResponseWriter, req *http.Request) int {
 	return respond(body, http.StatusOK, respWriter, req)
+}
+
+func RespondOKWithReader(r io.Reader, respWriter http.ResponseWriter, req *http.Request) int {
+	code := http.StatusOK
+	buf := make([]byte, 4096)
+	// Keep an eye out for this failing
+	io.CopyBuffer(respWriter, r, buf)
+	return code
 }
 
 func RespondOK(respWriter http.ResponseWriter, req *http.Request) int {
