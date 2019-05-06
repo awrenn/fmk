@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+    "path/filepath"
 	"strconv"
 	"time"
 )
@@ -88,6 +89,7 @@ func (ws *FmkWebServer) ServeStatic(staticDir, pathRoot string) {
 			Log.Error.Println(err)
 			return http.StatusNotFound
 		}
+        p = filepath.Join(staticDir, p)
         f, err := os.OpenFile(p, os.O_RDONLY, 0400)
         if err != nil {
             Log.Warning.Printf("Error attempting to open file: %s\n", err.Error())
