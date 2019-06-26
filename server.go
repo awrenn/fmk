@@ -89,6 +89,8 @@ func (ws *FmkWebServer) HandleFunc(path string, handleFunc func(http.ResponseWri
 
 func (ws *FmkWebServer) ServeStatic(staticDir, pathRoot string) {
 	serveFiles := func(w http.ResponseWriter, req *http.Request) int {
+        Log.Info.Println("URI:", req.RequestURI)
+        Log.Info.Println("Root:", pathRoot)
 		p, err := processURI(pathRoot, req.RequestURI)
 		if err != nil {
 			Log.Error.Println(err)
@@ -100,7 +102,6 @@ func (ws *FmkWebServer) ServeStatic(staticDir, pathRoot string) {
 			Log.Warning.Printf("Error attempting to open file: %s\n", err.Error())
 			return http.StatusNotFound
 		}
-		Log.Info.Printf("Serving Static File %s\n", p)
 		parts := strings.Split(p, ".")
 		ext := parts[len(parts)-1]
 		switch ext {
@@ -198,7 +199,9 @@ func processURI(webRoot, requestURI string) (fpath string, err error) {
 		}
 		if val == doubleDot[doubleDotCount] {
 			doubleDotCount += 1
-		}
+		} else {
+            doubleDotCount = 0
+        }
 		if doubleDotCount == len(doubleDot) {
 			return "", fmt.Errorf("Path contains consecutive periods")
 		}
