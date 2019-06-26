@@ -89,8 +89,6 @@ func (ws *FmkWebServer) HandleFunc(path string, handleFunc func(http.ResponseWri
 
 func (ws *FmkWebServer) ServeStatic(staticDir, pathRoot string) {
 	serveFiles := func(w http.ResponseWriter, req *http.Request) int {
-        Log.Info.Println("URI:", req.RequestURI)
-        Log.Info.Println("Root:", pathRoot)
 		p, err := processURI(pathRoot, req.RequestURI)
 		if err != nil {
 			Log.Error.Println(err)
