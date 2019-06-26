@@ -1,17 +1,22 @@
 package fmk
 
 import (
-    "os"
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"os"
 	"path"
-    "path/filepath"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
 var Server FmkWebServer
+
+const (
+    cth string = "Content-Type"
+)
 
 var (
 	doubleDot []rune = []rune("..")
@@ -89,13 +94,23 @@ func (ws *FmkWebServer) ServeStatic(staticDir, pathRoot string) {
 			Log.Error.Println(err)
 			return http.StatusNotFound
 		}
-        p = filepath.Join(staticDir, p)
-        f, err := os.OpenFile(p, os.O_RDONLY, 0400)
-        if err != nil {
-            Log.Warning.Printf("Error attempting to open file: %s\n", err.Error())
-            return http.StatusNotFound
-        }
+		p = filepath.Join(staticDir, p)
+		f, err := os.OpenFile(p, os.O_RDONLY, 0400)
+		if err != nil {
+			Log.Warning.Printf("Error attempting to open file: %s\n", err.Error())
+			return http.StatusNotFound
+		}
 		Log.Info.Printf("Serving Static File %s\n", p)
+		parts := strings.Split(p, ".")
+		ext := parts[len(parts)-1]
+		switch ext {
+		case "html":
+			w.Header().Add(cth, "text/html")
+		case "js":
+			w.Header().Add(cth, "text/javascript")
+		case "css":
+			w.Header().Add(cth, "text/css")
+		}
 		return RespondOKWithReader(f, w, req)
 	}
 	ws.HandleFunc(pathRoot, serveFiles)
