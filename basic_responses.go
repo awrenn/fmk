@@ -85,3 +85,9 @@ func RespondExpectationFailed(respWriter http.ResponseWriter, req *http.Request)
 	body := DefaultMessages[code]
 	return respond(body, code, respWriter, req)
 }
+
+func RespondTemporaryRedirect(respWriter http.ResponseWriter, req *http.Request, url string) int {
+	code := http.StatusTemporaryRedirect
+	respWriter.Header().Add("Location", url)
+	return respond(make([]byte, 0), code, respWriter, req)
+}
