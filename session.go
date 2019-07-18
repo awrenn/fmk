@@ -67,7 +67,7 @@ type FmkSessionManager struct {
 func NewSessionManager(sessionName string, sml, gcrate time.Duration) *FmkSessionManager {
 	sm := &FmkSessionManager{
 		Book:           make(map[string]Session),
-		SessionKey:     make([]byte, 32),
+		SessionKey:     DefaultSessionKey,
 		SessionName:    sessionName,
 		SessionMaxLife: sml,
 		GCRate:         gcrate,
@@ -77,6 +77,7 @@ func NewSessionManager(sessionName string, sml, gcrate time.Duration) *FmkSessio
 }
 
 func (sm *FmkSessionManager) SetSessionKey(sessionKey []byte) {
+	sm.SessionKey = make([]byte, len(sessionKey))
 	copy(sm.SessionKey, sessionKey)
 }
 
