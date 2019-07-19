@@ -38,6 +38,17 @@ func RespondOKWithReader(r io.Reader, respWriter http.ResponseWriter, req *http.
 	return code
 }
 
+func RespondWithBody(body []byte, code int, respWriter http.ResponseWriter, req *http.Request) int {
+	return respond(body, code, respWriter, req)
+}
+
+func RespondWithReader(r io.Reader, code int, respWriter http.ResponseWriter, req *http.Request) int {
+	respWriter.WriteHeader(code)
+	buf := make([]byte, 4096)
+	io.CopyBuffer(respWriter, r, buf)
+	return code
+}
+
 func RespondOK(respWriter http.ResponseWriter, req *http.Request) int {
 	code := http.StatusOK
 	body := DefaultMessages[code]
